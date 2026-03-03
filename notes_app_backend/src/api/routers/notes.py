@@ -3,7 +3,7 @@ from __future__ import annotations
 import uuid
 from typing import Sequence
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from sqlalchemy import delete, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -239,9 +239,11 @@ async def delete_note(
     note_id: str,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
-) -> None:
+) -> Response:
     """
     Access control: can only delete notes owned by the authenticated user.
+
+    FastAPI enforces that 204 responses have no response body; return an explicit empty Response.
     """
     try:
         nid = uuid.UUID(note_id)
@@ -255,4 +257,4 @@ async def delete_note(
 
     await db.execute(delete(Note).where(Note.id == nid, Note.user_id == user.id))
     await db.commit()
-    return None
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
